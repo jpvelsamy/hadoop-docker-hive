@@ -1,0 +1,130 @@
+MODULE 5 HIVE
+
+INFRASTRUCTURE
+	- using hiveserver
+		-https://cwiki.apache.org/confluence/display/Hive/AdminManual+Configuration
+		-https://cwiki.apache.org/confluence/display/Hive/HiveServer2+Clients
+
+	- understanding the metastore
+		-http://stackoverflow.com/questions/29485118/how-to-set-configuration-in-hive-site-xml-file-for-hive-metastore-connection
+
+	- understanding the jdbc driver
+		-a peek at the jdbc driver code
+
+GETTING STARTED
+	https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-InstallationandConfiguration
+
+REFERENCE DOCUMENTATION
+	https://cwiki.apache.org/confluence/collector/pages.action?key=Hive
+	https://cwiki.apache.org/confluence/display/Hive/LanguageManual	
+
+UNDER THE HOOD
+	https://cwiki.apache.org/confluence/display/Hive/Design
+
+LOADING
+	- File format
+		https://cwiki.apache.org/confluence/display/Hive/FileFormats
+			Text File
+			SequenceFile
+			RCFile
+			Avro Files
+			ORC Files
+			Parquet
+		https://cwiki.apache.org/confluence/display/Hive/StorageHandlers
+	- Metadata definition
+		Data types
+		DDL
+		 - internal tables
+		 - external tables
+	- Data load options
+		https://cwiki.apache.org/confluence/display/Hive/LanguageManual+ImportExport
+	- Performace
+	
+
+PROCESSING
+	- creating one table from another
+		-SerDe
+	HIVE SQL
+		- using scalar functions
+		- using aggregate functions
+		- using user defined functions
+		- using user defined table functions
+		- tuning the queries
+		- using partitions
+		- using joins
+	OTHER DML Operations		
+		- inserting data from one table to another
+			https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML
+		- updating and deleting data
+
+
+EXTRACTION
+	- using jdbc driver with jdbc client
+		http://www.dummies.com/programming/big-data/hadoop/squirrel-as-hive-client-with-the-jdbc-driver/
+
+	- using jdbc driver in your java program
+	- using hive with python client
+	- moving data into hive from mysql
+	- moving data from hive into mysql
+	- optimization aspects
+		- fetch size
+		- hiveserver heap size
+
+GOOD PRACTICES
+	- Avoid using hiveclient even for development purposes - especially to be aware of performance issues
+	- Run your hive queries through a service layer which provides meaninful audit for all the production activities
+	- Avoid connection pooling for hive connections - it does not work like other systems
+	- hive's behavior during concurrency 
+
+UNIT TESTING
+	- https://cwiki.apache.org/confluence/display/Hive/Unit+Testing+Hive+SQL	
+
+RCFileCAT
+	-https://cwiki.apache.org/confluence/display/Hive/RCFileCat	
+
+Select
+	Group By
+	Sort/Distribute/Cluster/Order By
+	Transform and Map-Reduce Scripts
+	Operators and User-Defined Functions (UDFs)
+	XPath-specific Functions
+	Joins
+	Join Optimization
+	Union
+	Lateral View	
+
+HIVE SESSION PREPWORK
+http://stackoverflow.com/questions/36909002/authorizationexception-user-not-allowed-to-impersonate-user
+http://stackoverflow.com/questions/25073792/error-e0902-exception-occured-user-root-is-not-allowed-to-impersonate-root
+https://github.com/docker/docker/issues/6586
+
+https://cwiki.apache.org/confluence/display/Hive/Setting+Up+HiveServer2#SettingUpHiveServer2-Impersonation
+
+http://172.17.0.2:10002/logs/hive.log
+
+with doas false
+
+  ./hiveserver2 --hiveconf hive.server2.authentication=CUSTOM --hiveconf hive.server2.custom.authentication.class=simpleauth.SampleAuthenticator --hiveconf hive.server2.enable.doAs=false
+
+!addlocaldriverjar /usr/local/hive/lib/hive-jdbc-2.1.0.jar
+!addlocaldrivername org.apache.hive.jdbc.HiveDriver
+!connect jdbc:hive2://172.17.0.2:10000 jpvel jpvel
+
+
+with doas true
+
+WITHOUT METASTORE
+./hiveserver2 --hiveconf hive.server2.authentication=CUSTOM --hiveconf hive.server2.custom.authentication.class=simpleauth.SampleAuthenticator --hiveconf hive.server2.enable.doAs=true 
+
+WITH METASTORE
+./hiveserver2 --hiveconf hive.server2.authentication=CUSTOM --hiveconf hive.server2.custom.authentication.class=simpleauth.SampleAuthenticator --hiveconf hive.server2.enable.doAs=true --hiveconf hive.metastore.uris=thrift://bonsai-master:9083
+
+BEELINE
+!addlocaldriverjar /usr/local/hive/lib/hive-jdbc-2.1.0.jar
+!addlocaldrivername org.apache.hive.jdbc.HiveDriver
+!connect jdbc:hive2://172.17.0.2:10000 jpvel jpvel
+
+
+
+set mapreduce.map.java.opts=-Xmx512m;
+set mapreduce.map.memory.mb=256;	
