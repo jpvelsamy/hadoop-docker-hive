@@ -1,0 +1,130 @@
+HIVE SESSION SCRIPTS
+
+EXTERNAL TABLE
+------------------------------------
+CREATE EXTERNAL TABLE WHITEGOODS
+(PRODUCT STRING,
+MODEL STRING,
+CATEGORY STRING,
+DP DOUBLE,
+MRP DOUBLE,
+WHP DOUBLE) 
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+LOCATION '/user/jpvel/whitegoods/';
+
+
+MANAGED TABLE
+------------------------------------
+./bin/hadoop fs -mkdir -p /user/jpvel/managed/whitegoods
+./bin/hadoop fs -put /tmp/whitegoods.csv /user/jpvel/managed/whitegoods/lg.csv
+./bin/hadoop fs -chown -R jpvel:jpvel /user/jpvel
+./bin/hadoop fs -ls -R /user/jpvel/
+
+CREATE TABLE finskul.WHITEGOODS
+(PRODUCT STRING,
+MODEL STRING,
+CATEGORY STRING,
+DP DOUBLE,
+MRP DOUBLE,
+WHP DOUBLE) 
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+LOCATION '/user/jpvel/managed/whitegoods';
+
+EXTERNAL TABLES WITH SEQUENCE FILE
+------------------------------------------------------------------------
+CREATE EXTERNAL TABLE SEQ_WHITEGOODS
+(PRODUCT STRING,
+MODEL STRING,
+CATEGORY STRING,
+DP DOUBLE,
+MRP DOUBLE,
+WHP DOUBLE) 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\001'
+STORED AS sequencefile 
+LOCATION '/user/jpvel/sequence/whitegoods';
+
+EXTERNAL TABLES WITH PARTITIONS
+------------------------------------------------------------------------
+CREATE EXTERNAL TABLE FINSKUL.WHITEGOODS_WITH_PARTN
+(PRODUCT STRING,
+MODEL STRING,
+CATEGORY STRING,
+DP DOUBLE,
+MRP DOUBLE,
+WHP DOUBLE) 
+PARTITIONED BY (MFG STRING)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+LOCATION '/user/jpvel/whitegoods/';
+
+ALTER TABLE FINSKUL.WHITEGOODS_WITH_PARTN ADD PARTITION (MFG='LG') 
+location '/user/jpvel/whitegoods/LG'
+
+
+
+LOAD DATA FROM FILE
+------------------------------------------------------------------------
+
+CREATE TABLE finskul.WHITEGOODS_load
+(PRODUCT STRING,
+MODEL STRING,
+CATEGORY STRING,
+DP DOUBLE,
+MRP DOUBLE,
+WHP DOUBLE) 
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
+
+
+ LOAD DATA INPATH '/user/jpvel/whitegoods/SAMSUNG/samsung_part.csv' INTO TABLE finskul.WHITEGOODS_load;
+
+ LOAD DATA LOCAL INPATH '/tmp/whitegoods.csv' INTO TABLE finskul.WHITEGOODS_load;
+
+
+-CTAS STATEMENT - DATA FROM TEXT FILE INTO SEQUENCE FILE
+ CREATE TABLE finskul.PRODUCT_LABEL
+ (PRODUCT STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\001'
+STORED AS sequencefile;
+
+insert into finskul.PRODUCT_LABEL SELECT PRODUCT FROM finskul.WHITEGOODS_load;
+
+CREATE TABLE finskul.MODEL_CAT AS SELECT MODEL, CATEGORY FROM FINSKUL.WHITEGOODS_WITH_PARTN;
+
+
+CREATE  TABLE FINSKUL.WHITEGOODS_WITH_PARTN_INTERNAL
+(PRODUCT STRING,
+MODEL STRING,
+CATEGORY STRING,
+DP DOUBLE,
+MRP DOUBLE,
+WHP DOUBLE) 
+PARTITIONED BY (MFG STRING)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
+
+SET hive.exec.dynamic.partition = true;
+SET hive.exec.dynamic.partition.mode = nonstrict;
+
+INSERT OVERWRITE TABLE FINSKUL.WHITEGOODS_WITH_PARTN_INTERNAL PARTITION(MFG) SELECT PRODUCT, MODEL, CATEGORY, DP, MRP, WHP, MFG FROM FINSKUL.MG_WHITEGOODS_TOTAL;
+
+ SELECT COUNT(*) AS COUNT, MFG FROM FINSKUL.WHITEGOODS_WITH_PARTN_INTERNAL GROUP BY MFG;
+
+ JOINS
+ ------------------------------------
+CREATE TABLE FINSKUL.MFG_MASTER (name STRING, rating INT) CLUSTERED BY (name) INTO 2 BUCKETS STORED AS ORC;
+ 
+INSERT INTO TABLE FINSKUL.MFG_MASTER VALUES ('LG', 5), ('SAMSUNG', 4);
+
+SELECT SUM(a.MRP), b.name, b.rating  FROM  FINSKUL.WHITEGOODS_WITH_PARTN_INTERNAL a JOIN  FINSKUL.MFG_MASTER b ON (a.MFG = b.name) GROUP BY b.name, b.rating;
+
+
+PYTHON CLIENT
+sudo apt-get build-dep python-numpy
+sudo pip install numpy
+sudo apt-get install libsasl2-dev
+sudo pip install pyhs2
+sudo pip install sasl
+sudo pip install thrift
+sudo pip install thrift-sasl
+sudo pip install PyHive
+
